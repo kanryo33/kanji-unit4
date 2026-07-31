@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>日本語単語フラッシュカード 3モード切替</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Noto Sans JP",sans-serif;}
+body{background:#f7f8fa;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;}
+
+/* カード3D反転 */
+.flip-container{perspective:1200px;width:700px;height:480px;cursor:pointer;}
+.flipper{position:relative;width:100%;height:100%;transition:transform 0.6s ease;transform-style:preserve-3d;}
+.flip-container.flipped .flipper{transform:rotateY(180deg);}
+.card-front,.card-back{
+  position:absolute;width:100%;height:100%;backface-visibility:hidden;
+  border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px;box-shadow:0 6px 22px rgba(0,0,0,0.18);
+}
+.card-front{background:#ffffff;color:#111;}
+.card-back{background:#234896;color:#fff;transform:rotateY(180deg);}
+
+/* 文字サイズ 投影最適化、英語を大幅拡大 */
+.main-text{font-size:80px;font-weight:bold;margin-bottom:24px;}
+.sub-text{font-size:40px;margin:8px 0;}
+.note-text{font-size:36px;margin-top:14px;opacity:0.98;}
+.hint{font-size:18px;color:#777;margin-top:16px;}
+
+/* 操作ボタンを最前面、クリック干渉防止 */
+.mode-bar{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;position:relative;z-index:100;}
+.controls{display:flex;gap:16px;position:relative;z-index:100;}
+button{
+  padding:12px 22px;font-size:19px;border:none;border-radius:9px;
+  background:#234896;color:#fff;cursor:pointer;
+  transition:0.2s;
+  position:relative;z-index:200;
+}
+button.mode-active{background:#1976D2;}
+button#shuffle{background:#238259;}
+button:active{opacity:0.85;}
+.info{position:absolute;bottom:18px;color:#666;font-size:16px;}
+</style>
+</head>
+<body>
+
+<div class="mode-bar">
+  <button id="mode1" class="mode-active">モード1：漢字→読み（音・訓）・意味</button>
+  <button id="mode2">モード2：単語→読み・意味</button>
+  <button id="mode3">モード3：英語→漢字・読み</button>
+</div>
+
+<div class="flip-container" id="cardWrap">
+  <div class="flipper">
+    <div class="card-front">
+      <div class="main-text" id="frontMain"></div>
+      <div class="hint">クリックで答えを表示</div>
+    </div>
+    <div class="card-back">
+      <div class="main-text" id="backMain"></div>
+      <div class="sub-text" id="backKun"></div>
+      <div class="sub-text" id="backOn"></div>
+      <div class="note-text" id="backEng"></div>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <button id="prev">← 前へ</button>
+  <button id="next">次へ →</button>
+  <button id="shuffle">シャッフル</button>
+</div>
+
+<div class="info">Space：カード反転｜←→キー：単語移動</div>
+
+<script>
+const originalWordData = [
+  {
+    kanji:"停",kun:"とまる・とめる",on:"テイ",
+    word:"停",wordReading:"とまる・とめる",eng:"to stop"
+  },
+  {
+    kanji:"停",kun:"とまる・とめる",on:"テイ",
+    word:"各駅停車",wordReading:"かくえきていしゃ",eng:"train that stops at each station"
+  },
+  {
+    kanji:"停",kun:"とまる・とめる",on:"テイ",
+    word:"バス停",wordReading:"バスてい",eng:"bus stop"
+  },
+  {
+    kanji:"停",kun:"とまる・とめる",on:"テイ",
+    word:"停留所",wordReading:"ていりゅうじょ",eng:"station stop"
+  },
+  {
+    kanji:"故",kun:"",on:"コ",
+    word:"事故",wordReading:"じこ",eng:"accident"
+  },
+  {
+    kanji:"故",kun:"",on:"コ",
+    word:"交通事故",wordReading:"こうつうじこ",eng:"traffic accident"
+  },
+  {
+    kanji:"困",kun:"こまる",on:"コン",
+    word:"困る",wordReading:"こまる",eng:"to be troubled"
+  },
+  {
+    kanji:"困",kun:"こまる",on:"コン",
+    word:"困難(な)",wordReading:"こんなん(な)",eng:"troublesome"
+  },
+  {
+    kanji:"約",kun:"",on:"ヤク",
+    word:"予約(する)",wordReading:"よやく(する)",eng:"to reserve"
+  },
+  {
+    kanji:"約",kun:"",on:"ヤク",
+    word:"約1万人",wordReading:"やく1まんにん",eng:"about 10,000 people"
+  },
+  {
+    kanji:"束",kun:"たば",on:"ソク",
+    word:"花束",wordReading:"はなたば",eng:"flower bouquet"
+  },
+  {
+    kanji:"約",kun:"",on:"ヤク",
+    word:"約束(する)",wordReading:"やくそく(する)",eng:"to promise"
+  },
+  {
+    kanji:"遅",kun:"おくれる・おそい",on:"チ",
+    word:"遅れる",wordReading:"おくれる",eng:"to be late, to be delayed"
+  },
+  {
+    kanji:"遅",kun:"おくれる・おそい",on:"チ",
+    word:"遅い",wordReading:"おそい",eng:"slow, late"
+  },
+  {
+    kanji:"遅",kun:"おくれる・おそい",on:"チ",
+    word:"遅刻(する)",wordReading:"ちこく(する)",eng:"to be late"
+  },
+  {
+    kanji:"連",kun:"つれる",on:"レン",
+    word:"連れていく",wordReading:"つれていく",eng:"to take"
+  },
+  {
+    kanji:"連",kun:"つれる",on:"レン",
+    word:"連れてくる",wordReading:"つれてくる",eng:"to bring"
+  },
+  {
+    kanji:"連",kun:"つれる",on:"レン",
+    word:"連休",wordReading:"れんきゅう",eng:"consecutive holidays"
+  },
+  {
+    kanji:"絡",kun:"",on:"ラク",
+    word:"連絡(する)",wordReading:"れんらく(する)",eng:"to contact"
+  },
+  {
+    kanji:"全",kun:"",on:"ゼン",
+    word:"安全(な)",wordReading:"あんぜん(な)",eng:"safe, secure"
+  },
+  {
+    kanji:"全",kun:"",on:"ゼン",
+    word:"完全(な)",wordReading:"かんぜん(な)",eng:"complete"
+  },
+  {
+    kanji:"全",kun:"",on:"ゼン",
+    word:"全然～ない",wordReading:"ぜんぜん～ない",eng:"not ~ at all"
+  },
+  {
+    kanji:"全",kun:"",on:"ゼン",
+    word:"全員",wordReading:"ぜんいん",eng:"all members, all employees"
+  },
+  {
+    kanji:"全",kun:"",on:"ゼン",
+    word:"全部",wordReading:"ぜんぶ",eng:"all, everything"
+  },
+];
+
+let wordData = [];
+const MODES = {
+  MODE_KANJI: 1,
+  MODE_WORD: 2,
+  MODE_ENG: 3
+};
+let currentMode = MODES.MODE_KANJI;
+let currentIndex = 0;
+let isBusy = false; // 連打ロック
+const cardWrap = document.getElementById("cardWrap");
+const frontMain = document.getElementById("frontMain");
+const backMain = document.getElementById("backMain");
+const backKun = document.getElementById("backKun");
+const backOn = document.getElementById("backOn");
+const backEng = document.getElementById("backEng");
+
+// Fisher-Yates シャッフル
+function shuffleArray(arr) {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function startShuffle(){
+  wordData = shuffleArray(originalWordData);
+  currentIndex = 0;
+  renderCard();
+}
+
+function renderCard(){
+  const item = wordData[currentIndex];
+  cardWrap.classList.remove("flipped");
+  switch(currentMode){
+    case MODES.MODE_KANJI:
+      frontMain.textContent = item.kanji;
+      backMain.textContent = item.kanji;
+      backKun.textContent = item.kun ? `訓読み：${item.kun}` : `訓読み：ー`;
+      backOn.textContent = `音読み：${item.on}`;
+      backEng.textContent = `意味：${item.eng}`;
+      break;
+    case MODES.MODE_WORD:
+      frontMain.textContent = item.word;
+      backMain.textContent = item.word;
+      backKun.textContent = `読み：${item.wordReading}`;
+      backOn.textContent = "";
+      backEng.textContent = `意味：${item.eng}`;
+      break;
+    case MODES.MODE_ENG:
+      frontMain.textContent = item.eng;
+      backMain.textContent = item.word;
+      backKun.textContent = `読み：${item.wordReading}`;
+      backOn.textContent = "";
+      backEng.textContent = "";
+      break;
+  }
+}
+
+// カードクリック反転
+cardWrap.addEventListener("click", (e)=>{
+  e.stopPropagation();
+  cardWrap.classList.toggle("flipped");
+});
+
+function nextWord() {
+  if(isBusy) return;
+  isBusy = true;
+  currentIndex = (currentIndex + 1) % wordData.length;
+  renderCard();
+  setTimeout(()=>{isBusy = false},300);
+}
+function prevWord() {
+  if(isBusy) return;
+  isBusy = true;
+  currentIndex = (currentIndex - 1 + wordData.length) % wordData.length;
+  renderCard();
+  setTimeout(()=>{isBusy = false},300);
+}
+
+// 【修正】addEventListenerに変更、安定性向上
+document.getElementById("next").addEventListener("click",(e)=>{
+  e.stopPropagation();
+  nextWord();
+});
+document.getElementById("prev").addEventListener("click",(e)=>{
+  e.stopPropagation();
+  prevWord();
+});
+document.getElementById("shuffle").addEventListener("click",(e)=>{
+  e.stopPropagation();
+  startShuffle();
+});
+
+// モード切替
+const modeButtons = [
+  {el:document.getElementById("mode1"),mode:MODES.MODE_KANJI},
+  {el:document.getElementById("mode2"),mode:MODES.MODE_WORD},
+  {el:document.getElementById("mode3"),mode:MODES.MODE_ENG},
+];
+modeButtons.forEach(btn=>{
+  btn.el.addEventListener("click",(e)=>{
+    e.stopPropagation();
+    currentMode = btn.mode;
+    modeButtons.forEach(b=>b.el.classList.remove("mode-active"));
+    btn.el.classList.add("mode-active");
+    renderCard();
+  })
+})
+
+// キーボードショートカット
+document.addEventListener("keydown",e=>{
+  if(isBusy) return;
+  if(e.code === "Space"){
+    e.preventDefault();
+    cardWrap.classList.toggle("flipped");
+  }else if(e.code === "ArrowRight"){
+    nextWord();
+  }else if(e.code === "ArrowLeft"){
+    prevWord();
+  }
+});
+
+// 起動時自動シャッフル
+startShuffle();
+</script>
+</body>
+</html>
