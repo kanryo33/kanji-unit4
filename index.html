@@ -21,9 +21,10 @@ body{background:#f7f8fa;height:100vh;display:flex;flex-direction:column;align-it
 .card-back{background:#234896;color:#fff;transform:rotateY(180deg);}
 
 /* 文字サイズ 投影最適化 */
-.main-text{font-size:80px;font-weight:bold;margin-bottom:24px;}
-.sub-text{font-size:40px;margin:8px 0;}
-.note-text{font-size:36px;margin-top:14px;opacity:0.98;}
+.main-text{font-size:80px;font-weight:bold;margin-bottom:12px;}
+.sub-text{font-size:40px;margin:6px 0;}
+.note-text{font-size:34px;margin:6px 0;opacity:0.98;}
+.cn-text{font-size:32px;margin-top:8px;color:#ffe89c;}
 .hint{font-size:18px;color:#777;margin-top:16px;}
 
 /* 操作ボタンを最前面、クリック干渉防止 */
@@ -46,7 +47,7 @@ button:active{opacity:0.85;}
 <div class="mode-bar">
   <button id="mode1" class="mode-active">モード1：漢字→読み・意味</button>
   <button id="mode2">モード2：読み→漢字・意味</button>
-  <button id="mode3">モード3：意味→漢字・読み</button>
+  <button id="mode3">モード3：英語→漢字・読み</button>
 </div>
 
 <div class="flip-container" id="cardWrap">
@@ -59,6 +60,7 @@ button:active{opacity:0.85;}
       <div class="main-text" id="backMain"></div>
       <div class="sub-text" id="backKana"></div>
       <div class="note-text" id="backEng"></div>
+      <div class="cn-text" id="backCn"></div>
     </div>
   </div>
 </div>
@@ -72,158 +74,158 @@ button:active{opacity:0.85;}
 <div class="info">Space：カード反転｜←→キー：単語移動</div>
 
 <script>
-// ========== 単語データ（今回追加5枚分完全統合） ==========
+// ========== 単語データ（追加中文cn字段） ==========
 const wordList = [
-  // ========== 1枚目 冷・蔵・庫・型・暖・凍・温 ==========
-  {kanji:"冷たい",kana:"つめたい",eng:"cold"},
-  {kanji:"冷える",kana:"ひえる",eng:"to get cold"},
-  {kanji:"冷やす",kana:"ひやす",eng:"to cool, to chill"},
-  {kanji:"冷める",kana:"さめる",eng:"to cool off, to get cold"},
-  {kanji:"冷ます",kana:"さます",eng:"to let cool"},
-  {kanji:"冷房",kana:"れいぼう",eng:"cooler, A/C"},
-  {kanji:"冷蔵庫",kana:"れいぞうこ",eng:"refrigerator"},
-  {kanji:"金庫",kana:"きんこ",eng:"safe"},
-  {kanji:"車庫",kana:"しゃこ",eng:"garage"},
-  {kanji:"倉庫",kana:"そうこ",eng:"warehouse"},
-  {kanji:"大型",kana:"おおがた",eng:"large scale/size"},
-  {kanji:"新型",kana:"しんがた",eng:"new model"},
-  {kanji:"暖まる",kana:"あたたまる",eng:"to warm up"},
-  {kanji:"暖める",kana:"あたためる",eng:"to warm up, to heat up"},
-  {kanji:"暖かい",kana:"あたたかい",eng:"warm"},
-  {kanji:"暖房",kana:"だんぼう",eng:"heater"},
-  {kanji:"凍る",kana:"こおる",eng:"to freeze"},
-  {kanji:"冷凍庫",kana:"れいとうこ",eng:"freezer"},
-  {kanji:"冷凍食品",kana:"れいとうしょくひん",eng:"frozen goods"},
-  {kanji:"温まる",kana:"あたたまる",eng:"to warm up"},
-  {kanji:"温める",kana:"あたためる",eng:"to warm up, to heat up"},
-  {kanji:"温かい",kana:"あたたかい",eng:"warm, hot"},
-  {kanji:"温度",kana:"おんど",eng:"temperature"},
-  {kanji:"体温",kana:"たいおん",eng:"body temperature"},
-  {kanji:"気温",kana:"きおん",eng:"air temperature"},
-  {kanji:"温泉",kana:"おんせん",eng:"hot spring"},
+  // 冷・蔵・庫・型・暖・凍・温
+  {kanji:"冷たい",kana:"つめたい",eng:"cold",cn:"冷的、冰凉的"},
+  {kanji:"冷える",kana:"ひえる",eng:"to get cold",cn:"变冷、凉下来"},
+  {kanji:"冷やす",kana:"ひやす",eng:"to cool, to chill",cn:"冰镇、冷却"},
+  {kanji:"冷める",kana:"さめる",eng:"to cool off, to get cold",cn:"变凉、冷却"},
+  {kanji:"冷ます",kana:"さます",eng:"to let cool",cn:"放凉、晾凉"},
+  {kanji:"冷房",kana:"れいぼう",eng:"cooler, A/C",cn:"冷气、空调制冷"},
+  {kanji:"冷蔵庫",kana:"れいぞうこ",eng:"refrigerator",cn:"冰箱"},
+  {kanji:"金庫",kana:"きんこ",eng:"safe",cn:"保险柜"},
+  {kanji:"車庫",kana:"しゃこ",eng:"garage",cn:"车库"},
+  {kanji:"倉庫",kana:"そうこ",eng:"warehouse",cn:"仓库"},
+  {kanji:"大型",kana:"おおがた",eng:"large scale/size",cn:"大型、大号"},
+  {kanji:"新型",kana:"しんがた",eng:"new model",cn:"新款、新型"},
+  {kanji:"暖まる",kana:"あたたまる",eng:"to warm up",cn:"变暖、暖和起来"},
+  {kanji:"暖める",kana:"あたためる",eng:"to warm up, to heat up",cn:"加热、取暖"},
+  {kanji:"暖かい",kana:"あたたかい",eng:"warm",cn:"温暖的、暖和的"},
+  {kanji:"暖房",kana:"だんぼう",eng:"heater",cn:"暖气、制热空调"},
+  {kanji:"凍る",kana:"こおる",eng:"to freeze",cn:"结冰、冻结"},
+  {kanji:"冷凍庫",kana:"れいとうこ",eng:"freezer",cn:"冷冻柜、冰柜"},
+  {kanji:"冷凍食品",kana:"れいとうしょくひん",eng:"frozen goods",cn:"冷冻食品"},
+  {kanji:"温まる",kana:"あたたまる",eng:"to warm up",cn:"回暖、身子暖和"},
+  {kanji:"温める",kana:"あたためる",eng:"to warm up, to heat up",cn:"温热、加热"},
+  {kanji:"温かい",kana:"あたたかい",eng:"warm, hot",cn:"温热的、热乎的"},
+  {kanji:"温度",kana:"おんど",eng:"temperature",cn:"温度"},
+  {kanji:"体温",kana:"たいおん",eng:"body temperature",cn:"体温"},
+  {kanji:"気温",kana:"きおん",eng:"air temperature",cn:"气温"},
+  {kanji:"温泉",kana:"おんせん",eng:"hot spring",cn:"温泉"},
 
-  // ========== 2枚目 資・集・辞・情・整・調・進・歩 ==========
-  {kanji:"資料",kana:"しりょう",eng:"materials, documents"},
-  {kanji:"資格",kana:"しかく",eng:"certification, qualification"},
-  {kanji:"資源",kana:"しげん",eng:"resources"},
-  {kanji:"集まる",kana:"あつまる",eng:"to gather"},
-  {kanji:"集める",kana:"あつめる",eng:"to gather, to collect"},
-  {kanji:"集合する",kana:"しゅうごうする",eng:"to meet up, to rendezvous"},
-  {kanji:"集中する",kana:"しゅうちゅうする",eng:"to focus"},
-  {kanji:"集金する",kana:"しゅうきんする",eng:"to gather money"},
-  {kanji:"写真集",kana:"しゃしんしゅう",eng:"photo album"},
-  {kanji:"集団",kana:"しゅうだん",eng:"group"},
-  {kanji:"辞書",kana:"じしょ",eng:"dictionary"},
-  {kanji:"辞典",kana:"じてん",eng:"dictionary"},
-  {kanji:"辞める",kana:"やめる",eng:"to quit, to resign"},
-  {kanji:"情報",kana:"じょうほう",eng:"information"},
-  {kanji:"事情",kana:"じじょう",eng:"situation"},
-  {kanji:"感情",kana:"かんじょう",eng:"feelings, emotions"},
-  {kanji:"苦情",kana:"くじょう",eng:"complaint"},
-  {kanji:"整理する",kana:"せいりする",eng:"to organize"},
-  {kanji:"調整する",kana:"ちょうせいする",eng:"to adjust"},
-  {kanji:"調べる",kana:"しらべる",eng:"to research"},
-  {kanji:"調査する",kana:"ちょうさする",eng:"to investigate, to audit"},
-  {kanji:"調子",kana:"ちょうし",eng:"condition"},
-  {kanji:"調味料",kana:"ちょうみりょう",eng:"seasoning, flavoring"},
-  {kanji:"調節する",kana:"ちょうせつする",eng:"to adjust"},
-  {kanji:"進む",kana:"すすむ",eng:"to progress"},
-  {kanji:"進める",kana:"すすめる",eng:"to progress, to move forward"},
-  {kanji:"進学する",kana:"しんがくする",eng:"to progress to the next stage of schooling"},
-  {kanji:"前進する",kana:"ぜんしんする",eng:"to move forward"},
-  {kanji:"進歩する",kana:"しんぽする",eng:"to make progress"},
+  // 資・集・辞・情・整・調・進・歩
+  {kanji:"資料",kana:"しりょう",eng:"materials, documents",cn:"资料、材料"},
+  {kanji:"資格",kana:"しかく",eng:"certification, qualification",cn:"资格、资质"},
+  {kanji:"資源",kana:"しげん",eng:"resources",cn:"资源"},
+  {kanji:"集まる",kana:"あつまる",eng:"to gather",cn:"聚集、集合（自动）"},
+  {kanji:"集める",kana:"あつめる",eng:"to gather, to collect",cn:"收集、召集（他动）"},
+  {kanji:"集合する",kana:"しゅうごうする",eng:"to meet up, to rendezvous",cn:"集合、汇合"},
+  {kanji:"集中する",kana:"しゅうちゅうする",eng:"to focus",cn:"集中"},
+  {kanji:"集金する",kana:"しゅうきんする",eng:"to gather money",cn:"收款、集资"},
+  {kanji:"写真集",kana:"しゃしんしゅう",eng:"photo album",cn:"写真集、相册"},
+  {kanji:"集団",kana:"しゅうだん",eng:"group",cn:"集团、团体"},
+  {kanji:"辞書",kana:"じしょ",eng:"dictionary",cn:"词典、字典"},
+  {kanji:"辞典",kana:"じてん",eng:"dictionary",cn:"辞典"},
+  {kanji:"辞める",kana:"やめる",eng:"to quit, to resign",cn:"辞职、辞去"},
+  {kanji:"情報",kana:"じょうほう",eng:"information",cn:"情报、信息"},
+  {kanji:"事情",kana:"じじょう",eng:"situation",cn:"情况、缘由"},
+  {kanji:"感情",kana:"かんじょう",eng:"feelings, emotions",cn:"感情、情绪"},
+  {kanji:"苦情",kana:"くじょう",eng:"complaint",cn:"抱怨、投诉"},
+  {kanji:"整理する",kana:"せいりする",eng:"to organize",cn:"整理、收拾"},
+  {kanji:"調整する",kana:"ちょうせいする",eng:"to adjust",cn:"调整、调配"},
+  {kanji:"調べる",kana:"しらべる",eng:"to research",cn:"调查、查阅"},
+  {kanji:"調査する",kana:"ちょうさする",eng:"to investigate, to audit",cn:"调研、勘查"},
+  {kanji:"調子",kana:"ちょうし",eng:"condition",cn:"状态、势头、身体状况"},
+  {kanji:"調味料",kana:"ちょうみりょう",eng:"seasoning, flavoring",cn:"调味料、佐料"},
+  {kanji:"調節する",kana:"ちょうせつする",eng:"to adjust",cn:"调节、调档"},
+  {kanji:"進む",kana:"すすむ",eng:"to progress",cn:"前进、进展（自动）"},
+  {kanji:"進める",kana:"すすめる",eng:"to progress, to move forward",cn:"推进、促进（他动）"},
+  {kanji:"進学する",kana:"しんがくする",eng:"to progress to the next stage of schooling",cn:"升学"},
+  {kanji:"前進する",kana:"ぜんしんする",eng:"to move forward",cn:"前进、向前"},
+  {kanji:"進歩する",kana:"しんぽする",eng:"to make progress",cn:"进步、长进"},
 
-  // ========== 3枚目 授・級・単・法・難・簡・専・宿・受・般 ==========
-  {kanji:"授業",kana:"じゅぎょう",eng:"class, course"},
-  {kanji:"教授",kana:"きょうじゅ",eng:"teacher, professor"},
-  {kanji:"上級",kana:"じょうきゅう",eng:"advanced (level)"},
-  {kanji:"初級",kana:"しょきゅう",eng:"beginner (level)"},
-  {kanji:"3級",kana:"さんきゅう",eng:"level 3, grade 3"},
-  {kanji:"高級な",kana:"こうきゅうな",eng:"high class, high level"},
-  {kanji:"単語",kana:"たんご",eng:"vocabulary word"},
-  {kanji:"単位",kana:"たんい",eng:"unit, credit"},
-  {kanji:"文法",kana:"ぶんぽう",eng:"grammar"},
-  {kanji:"方法",kana:"ほうほう",eng:"method, way"},
-  {kanji:"法学部",kana:"ほうがくぶ",eng:"law department"},
-  {kanji:"難しい",kana:"むずかしい",eng:"difficult"},
-  {kanji:"困難な",kana:"こんなんな",eng:"difficult, troublesome"},
-  {kanji:"簡単な",kana:"かんたんな",eng:"easy, simple"},
-  {kanji:"専門",kana:"せんもん",eng:"specialization, major"},
-  {kanji:"専門家",kana:"せんもんか",eng:"specialist, expert"},
-  {kanji:"宿題",kana:"しゅくだい",eng:"homework"},
-  {kanji:"宿泊する",kana:"しゅくはくする",eng:"to stay in lodging"},
-  {kanji:"受ける",kana:"うける",eng:"to receive, to accept"},
-  {kanji:"試験に受かる",kana:"しけんにうかる",eng:"to take an exam"},
-  {kanji:"受け取る",kana:"うけとる",eng:"to accept"},
-  {kanji:"受付",kana:"うけつけ",eng:"reception (desk)"},
-  {kanji:"受験する",kana:"じゅけんする",eng:"to take an exam"},
-  {kanji:"受信する",kana:"じゅしんする",eng:"to receive a message"},
-  {kanji:"受賞する",kana:"じゅしょうする",eng:"to receive an award"},
-  {kanji:"一般",kana:"いっぱん",eng:"in general"},
-  {kanji:"一般的な",kana:"いっぱんてきな",eng:"usual, general, ordinary"},
+  // 授・級・単・法・難・簡・専・宿・受・般
+  {kanji:"授業",kana:"じゅぎょう",eng:"class, course",cn:"上课、课程"},
+  {kanji:"教授",kana:"きょうじゅ",eng:"teacher, professor",cn:"教授"},
+  {kanji:"上級",kana:"じょうきゅう",eng:"advanced (level)",cn:"上级、高级"},
+  {kanji:"初級",kana:"しょきゅう",eng:"beginner (level)",cn:"初级、入门级"},
+  {kanji:"3級",kana:"さんきゅう",eng:"level 3, grade 3",cn:"三级"},
+  {kanji:"高級な",kana:"こうきゅうな",eng:"high class, high level",cn:"高级的、高档的"},
+  {kanji:"単語",kana:"たんご",eng:"vocabulary word",cn:"单词"},
+  {kanji:"単位",kana:"たんい",eng:"unit, credit",cn:"单位、学分"},
+  {kanji:"文法",kana:"ぶんぽう",eng:"grammar",cn:"文法、语法"},
+  {kanji:"方法",kana:"ほうほう",eng:"method, way",cn:"方法、办法"},
+  {kanji:"法学部",kana:"ほうがくぶ",eng:"law department",cn:"法学系"},
+  {kanji:"難しい",kana:"むずかしい",eng:"difficult",cn:"困难的、难的"},
+  {kanji:"困難な",kana:"こんなんな",eng:"difficult, troublesome",cn:"困难的、棘手的"},
+  {kanji:"簡単な",kana:"かんたんな",eng:"easy, simple",cn:"简单的、容易的"},
+  {kanji:"専門",kana:"せんもん",eng:"specialization, major",cn:"专业、专门"},
+  {kanji:"専門家",kana:"せんもんか",eng:"specialist, expert",cn:"专家、专业人士"},
+  {kanji:"宿題",kana:"しゅくだい",eng:"homework",cn:"作业、家庭作业"},
+  {kanji:"宿泊する",kana:"しゅくはくする",eng:"to stay in lodging",cn:"住宿、留宿"},
+  {kanji:"受ける",kana:"うける",eng:"to receive, to accept",cn:"接受、领取、参加"},
+  {kanji:"試験に受かる",kana:"しけんにうかる",eng:"to pass an exam",cn:"考试合格、考上"},
+  {kanji:"受け取る",kana:"うけとる",eng:"to accept",cn:"收下、领取"},
+  {kanji:"受付",kana:"うけつけ",eng:"reception (desk)",cn:"前台、受理处"},
+  {kanji:"受験する",kana:"じゅけんする",eng:"to take an exam",cn:"报考、参加考试"},
+  {kanji:"受信する",kana:"じゅしんする",eng:"to receive a message",cn:"接收（信号、消息）"},
+  {kanji:"受賞する",kana:"じゅしょうする",eng:"to receive an award",cn:"获奖、领奖"},
+  {kanji:"一般",kana:"いっぱん",eng:"in general",cn:"一般、普通"},
+  {kanji:"一般的な",kana:"いっぱんてきな",eng:"usual, general, ordinary",cn:"一般性的、普通的"},
 
-  // ========== 4枚目 歴・種・類・変・化・解・比・課・形・答 ==========
-  {kanji:"歴史",kana:"れきし",eng:"history"},
-  {kanji:"学歴",kana:"がくれき",eng:"educational background"},
-  {kanji:"種",kana:"たね",eng:"seed"},
-  {kanji:"種類",kana:"しゅるい",eng:"type, variety"},
-  {kanji:"書類",kana:"しょるい",eng:"documents"},
-  {kanji:"衣類",kana:"いるい",eng:"clothing"},
-  {kanji:"変わる",kana:"かわる",eng:"to change"},
-  {kanji:"変える",kana:"かえる",eng:"to change"},
-  {kanji:"変化する",kana:"へんかする",eng:"to change"},
-  {kanji:"変な",kana:"へんな",eng:"strange"},
-  {kanji:"大変な",kana:"たいへんな",eng:"very, serious"},
-  {kanji:"化学",kana:"かがく",eng:"chemistry"},
-  {kanji:"文化",kana:"ぶんか",eng:"culture"},
-  {kanji:"化粧する",kana:"けしょうする",eng:"to apply makeup, cosmetics"},
-  {kanji:"機械化する",kana:"きかいかする",eng:"mechanization"},
-  {kanji:"～化する",kana:"～かする",eng:"change to ~"},
-  {kanji:"理解する",kana:"りかいする",eng:"to understand, to comprehend"},
-  {kanji:"解決する",kana:"かいけつする",eng:"to solve"},
-  {kanji:"比べる",kana:"くらべる",eng:"to compare"},
-  {kanji:"比較する",kana:"ひかくする",eng:"to compare"},
-  {kanji:"課題",kana:"かだい",eng:"topic, lesson, issue"},
-  {kanji:"第1課",kana:"だいいっか",eng:"lesson 1"},
-  {kanji:"課長",kana:"かちょう",eng:"section head"},
-  {kanji:"形",kana:"かたち",eng:"shape, model"},
-  {kanji:"人形",kana:"にんぎょう",eng:"doll"},
-  {kanji:"三角形",kana:"さんかくけい",eng:"triangle"},
-  {kanji:"四角形",kana:"しかくけい",eng:"square"},
-  {kanji:"解答する",kana:"かいとうする",eng:"to answer"},
-  {kanji:"正答",kana:"せいとう",eng:"correct answer"},
+  // 歴・種・類・変・化・解・比・課・形・答
+  {kanji:"歴史",kana:"れきし",eng:"history",cn:"历史"},
+  {kanji:"学歴",kana:"がくれき",eng:"educational background",cn:"学历"},
+  {kanji:"種",kana:"たね",eng:"seed",cn:"种子"},
+  {kanji:"種類",kana:"しゅるい",eng:"type, variety",cn:"种类、类型"},
+  {kanji:"書類",kana:"しょるい",eng:"documents",cn:"文件、书面资料"},
+  {kanji:"衣類",kana:"いるい",eng:"clothing",cn:"衣物、服饰类"},
+  {kanji:"変わる",kana:"かわる",eng:"to change",cn:"变化、改变（自动）"},
+  {kanji:"変える",kana:"かえる",eng:"to change",cn:"更改、改换（他动）"},
+  {kanji:"変化する",kana:"へんかする",eng:"to change",cn:"变化"},
+  {kanji:"変な",kana:"へんな",eng:"strange",cn:"奇怪的、怪异的"},
+  {kanji:"大変な",kana:"たいへんな",eng:"very, serious",cn:"辛苦的、重大的、糟糕的"},
+  {kanji:"化学",kana:"かがく",eng:"chemistry",cn:"化学"},
+  {kanji:"文化",kana:"ぶんか",eng:"culture",cn:"文化"},
+  {kanji:"化粧する",kana:"けしょうする",eng:"to apply makeup, cosmetics",cn:"化妆"},
+  {kanji:"機械化する",kana:"きかいかする",eng:"mechanization",cn:"机械化"},
+  {kanji:"～化する",kana:"～かする",eng:"change to ~",cn:"……化"},
+  {kanji:"理解する",kana:"りかいする",eng:"to understand, to comprehend",cn:"理解、明白"},
+  {kanji:"解決する",kana:"かいけつする",eng:"to solve",cn:"解决"},
+  {kanji:"比べる",kana:"くらべる",eng:"to compare",cn:"比较、比照"},
+  {kanji:"比較する",kana:"ひかくする",eng:"to compare",cn:"对比、比较"},
+  {kanji:"課題",kana:"かだい",eng:"topic, lesson, issue",cn:"课题、作业、问题"},
+  {kanji:"第1課",kana:"だいいっか",eng:"lesson 1",cn:"第一课"},
+  {kanji:"課長",kana:"かちょう",eng:"section head",cn:"科长"},
+  {kanji:"形",kana:"かたち",eng:"shape, model",cn:"形状、样子"},
+  {kanji:"人形",kana:"にんぎょう",eng:"doll",cn:"人偶、玩偶"},
+  {kanji:"三角形",kana:"さんかくけい",eng:"triangle",cn:"三角形"},
+  {kanji:"四角形",kana:"しかくけい",eng:"square",cn:"四边形、方形"},
+  {kanji:"解答する",kana:"かいとうする",eng:"to answer",cn:"解答、作答"},
+  {kanji:"正答",kana:"せいとう",eng:"correct answer",cn:"正确答案"},
 
-  // ========== 5枚目 準・備・期・限・数・販・値・容 ==========
-  {kanji:"準備する",kana:"じゅんびする",eng:"to prepare"},
-  {kanji:"備える",kana:"そなえる",eng:"to prepare"},
-  {kanji:"設備",kana:"せつび",eng:"equipment, installation"},
-  {kanji:"期間",kana:"きかん",eng:"period of time"},
-  {kanji:"短期",kana:"たんき",eng:"short period of time"},
-  {kanji:"学期",kana:"がっき",eng:"academic term"},
-  {kanji:"時期",kana:"じき",eng:"season, period"},
-  {kanji:"期待する",kana:"きたいする",eng:"to anticipate, to look forward to"},
-  {kanji:"限る",kana:"かぎる",eng:"to be limited/restricted"},
-  {kanji:"限定する",kana:"げんていする",eng:"to be limited"},
-  {kanji:"制限する",kana:"せいげんする",eng:"to set a limit"},
-  {kanji:"数える",kana:"かぞえる",eng:"to count"},
-  {kanji:"数",kana:"かず",eng:"number, amount"},
-  {kanji:"数字",kana:"すうじ",eng:"number"},
-  {kanji:"数学",kana:"すうがく",eng:"mathematics"},
-  {kanji:"数量",kana:"すうりょう",eng:"quantity"},
-  {kanji:"点数",kana:"てんすう",eng:"point"},
-  {kanji:"数か月",kana:"すうかげつ",eng:"several months"},
-  {kanji:"人数",kana:"にんずう",eng:"amount (of people)"},
-  {kanji:"販売する",kana:"はんばいする",eng:"to sell"},
-  {kanji:"自動販売機",kana:"じどうはんばいき",eng:"vending machine"},
-  {kanji:"値段",kana:"ねだん",eng:"price"},
-  {kanji:"値上げする",kana:"ねあげする",eng:"to raise the price"},
-  {kanji:"値下げする",kana:"ねさげする",eng:"to lower the price"},
-  {kanji:"価値",kana:"かち",eng:"value, worth"},
-  {kanji:"内容",kana:"ないよう",eng:"contents"},
-  {kanji:"容器",kana:"ようき",eng:"container"},
-  {kanji:"美容",kana:"びよう",eng:"beautiful form"},
-  {kanji:"美容院",kana:"びよういん",eng:"beauty salon"},
-  {kanji:"容易な",kana:"よういな",eng:"easy, simple"},
+  // 準・備・期・限・数・販・値・容
+  {kanji:"準備する",kana:"じゅんびする",eng:"to prepare",cn:"准备"},
+  {kanji:"備える",kana:"そなえる",eng:"to prepare",cn:"防备、预备"},
+  {kanji:"設備",kana:"せつび",eng:"equipment, installation",cn:"设备、设施"},
+  {kanji:"期間",kana:"きかん",eng:"period of time",cn:"期间、期限"},
+  {kanji:"短期",kana:"たんき",eng:"short period of time",cn:"短期"},
+  {kanji:"学期",kana:"がっき",eng:"academic term",cn:"学期"},
+  {kanji:"時期",kana:"じき",eng:"season, period",cn:"时期、时节"},
+  {kanji:"期待する",kana:"きたいする",eng:"to anticipate, to look forward to",cn:"期待、期盼"},
+  {kanji:"限る",kana:"かぎる",eng:"to be limited/restricted",cn:"限于、仅限"},
+  {kanji:"限定する",kana:"げんていする",eng:"to be limited",cn:"限定"},
+  {kanji:"制限する",kana:"せいげんする",eng:"to set a limit",cn:"限制、管控"},
+  {kanji:"数える",kana:"かぞえる",eng:"to count",cn:"数数、计数"},
+  {kanji:"数",kana:"かず",eng:"number, amount",cn:"数目、数量"},
+  {kanji:"数字",kana:"すうじ",eng:"number",cn:"数字"},
+  {kanji:"数学",kana:"すうがく",eng:"mathematics",cn:"数学"},
+  {kanji:"数量",kana:"すうりょう",eng:"quantity",cn:"数量"},
+  {kanji:"点数",kana:"てんすう",eng:"point",cn:"分数、点数"},
+  {kanji:"数か月",kana:"すうかげつ",eng:"several months",cn:"好几个月"},
+  {kanji:"人数",kana:"にんずう",eng:"amount (of people)",cn:"人数"},
+  {kanji:"販売する",kana:"はんばいする",eng:"to sell",cn:"贩卖、销售"},
+  {kanji:"自動販売機",kana:"じどうはんばいき",eng:"vending machine",cn:"自动售货机"},
+  {kanji:"値段",kana:"ねだん",eng:"price",cn:"价格、价钱"},
+  {kanji:"値上げする",kana:"ねあげする",eng:"to raise the price",cn:"涨价、提价"},
+  {kanji:"値下げする",kana:"ねさげする",eng:"to lower the price",cn:"降价、打折"},
+  {kanji:"価値",kana:"かち",eng:"value, worth",cn:"价值"},
+  {kanji:"内容",kana:"ないよう",eng:"contents",cn:"内容"},
+  {kanji:"容器",kana:"ようき",eng:"container",cn:"容器"},
+  {kanji:"美容",kana:"びよう",eng:"beautiful form",cn:"美容、美化"},
+  {kanji:"美容院",kana:"びよういん",eng:"beauty salon",cn:"美容院"},
+  {kanji:"容易な",kana:"よういな",eng:"easy, simple",cn:"容易的、简单的"},
 ];
 
 let wordData = [...wordList];
@@ -241,8 +243,9 @@ const frontMain = document.getElementById("frontMain");
 const backMain = document.getElementById("backMain");
 const backKana = document.getElementById("backKana");
 const backEng = document.getElementById("backEng");
+const backCn = document.getElementById("backCn");
 
-// カード描画
+// カード描画（追加中文渲染）
 function renderCard(){
   const item = wordData[currentIndex];
   cardWrap.classList.remove("flipped");
@@ -252,18 +255,21 @@ function renderCard(){
       backMain.textContent = item.kanji;
       backKana.textContent = item.kana;
       backEng.textContent = item.eng;
+      backCn.textContent = item.cn;
       break;
     case MODES.READ_TO_KANJI:
       frontMain.textContent = item.kana;
       backMain.textContent = item.kanji;
       backKana.textContent = item.kana;
       backEng.textContent = item.eng;
+      backCn.textContent = item.cn;
       break;
     case MODES.ENG_TO_KANJI:
       frontMain.textContent = item.eng;
       backMain.textContent = item.kanji;
       backKana.textContent = item.kana;
       backEng.textContent = item.eng;
+      backCn.textContent = item.cn;
       break;
   }
 }
@@ -280,23 +286,33 @@ function shuffleArray(arr){
 function startShuffle(){
   wordData = shuffleArray(wordList);
   currentIndex = 0;
+  cardWrap.classList.remove("flipped");
   renderCard();
 }
 
-// 前へ・次へ
-function nextWord() {
+// 翻页前强制复位卡片到正面，解决背面闪现问题
+function goNextWord() {
   if(isBusy) return;
   isBusy = true;
-  currentIndex = (currentIndex + 1) % wordData.length;
-  renderCard();
-  setTimeout(()=>{isBusy = false},300);
+  // 先翻回正面
+  cardWrap.classList.remove("flipped");
+  // 等待翻转结束再切换内容
+  setTimeout(()=>{
+    currentIndex = (currentIndex + 1) % wordData.length;
+    renderCard();
+    setTimeout(()=>{isBusy = false},200);
+  },300);
 }
-function prevWord() {
+function goPrevWord() {
   if(isBusy) return;
   isBusy = true;
-  currentIndex = (currentIndex - 1 + wordData.length) % wordData.length;
-  renderCard();
-  setTimeout(()=>{isBusy = false},300);
+  // 先翻回正面
+  cardWrap.classList.remove("flipped");
+  setTimeout(()=>{
+    currentIndex = (currentIndex - 1 + wordData.length) % wordData.length;
+    renderCard();
+    setTimeout(()=>{isBusy = false},200);
+  },300);
 }
 
 // イベント登録
@@ -307,11 +323,11 @@ cardWrap.addEventListener("click", (e)=>{
 
 document.getElementById("next").addEventListener("click",(e)=>{
   e.stopPropagation();
-  nextWord();
+  goNextWord();
 });
 document.getElementById("prev").addEventListener("click",(e)=>{
   e.stopPropagation();
-  prevWord();
+  goPrevWord();
 });
 document.getElementById("shuffle").addEventListener("click",(e)=>{
   e.stopPropagation();
@@ -330,6 +346,7 @@ modeButtons.forEach(btn=>{
     currentMode = btn.mode;
     modeButtons.forEach(b=>b.el.classList.remove("mode-active"));
     btn.el.classList.add("mode-active");
+    cardWrap.classList.remove("flipped");
     renderCard();
   })
 });
@@ -341,9 +358,9 @@ document.addEventListener("keydown",e=>{
     e.preventDefault();
     cardWrap.classList.toggle("flipped");
   }else if(e.code === "ArrowRight"){
-    nextWord();
+    goNextWord();
   }else if(e.code === "ArrowLeft"){
-    prevWord();
+    goPrevWord();
   }
 });
 
